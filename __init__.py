@@ -26,8 +26,8 @@ from bpy_extras.io_utils import (
 class ImportOBJ(bpy.types.Operator, ImportHelper):
     """Load a Wavefront OBJ file"""
 
-    bl_idname = "export_test.custom_obj"
-    bl_label = "Export Custom OBJ"
+    bl_idname = "import_test.custom_obj"
+    bl_label = "Import Custom OBJ"
     bl_options = {"PRESET", "UNDO"}
 
     filename_ext = ".obj"
@@ -65,16 +65,85 @@ class ImportOBJ(bpy.types.Operator, ImportHelper):
         box.prop(self, "split_by_object")
 
 
+# Export unfinished
+@orientation_helper(axis_forward="Z", axis_up="Y")
+class ExportOBJ(bpy.types.Operator, ExportHelper):
+    """Save a Wavefront OBJ file"""
+
+    bl_idname = "export_test.custom_obj"
+    bl_label = "Export Custom OBJ"
+    bl_options = {"PRESET", "UNDO"}
+
+    filename_ext = ".obj"
+
+    filter_glob = StringProperty(default="*.obj;*.mtl", options={"HIDDEN"})
+
+    selection_only = BoolProperty(
+		name="Selection Only",
+		description="Export only the selected objects",
+		default=False
+	)
+    
+    export_normals = BoolProperty(
+		name="Write Normals"
+		default=True
+	)
+    
+    export_uvs = BoolProperty(
+		name="Write UVs",
+		default=True
+	)
+    
+    export_materials = BoolProperty(
+		name="Write Materials",
+		default=True
+	)
+    
+    triangulate = BoolProperty(
+		name="Triangulate",
+		description="Triangulate all faces before exporting",
+		default=False
+	)
+    
+    use_objects = BoolProperty(
+		name="Objects as OBJ Objects"
+		description="Export Blender objects as separate 'o [name]'"
+		default=True
+	)
+    
+    scale = FloatProperty(
+		name="Scale",
+		min=0.001
+		max=1000.0,
+		default=1.0
+	)
+
+    def execute(self, context):
+        keywords = self.as_keywords(ignore=("filter_glob"))
+
+        world_matrix = axis_conversion(
+            from_forward=self.axis_forward, from_up=self.axis_up
+        ).to_4x4()
+        keywords["world_matrix"] = world_matrix
+        
+        return None
+
+
 def importfunc(self, context):
     self.layout.operator(ImportOBJ.bl_idname, text="Custom Wavefront OBJ")
+    
+def exportfunc(self, context):
+    self.layout.operator(ExportOBJ.bl_idname, text="Custom Wavefront OBJ")
     
 def register():
     bpy.utils.register_module(__name__)
     
     bpy.types.INFO_MT_file_import.append(importfunc)
+    bpy.types.INFO_MT_file_export.append(exportfunc)
 
 def unregister():
     bpy.types.INFO_MT_file_import.remove(importfunc)
+    bpy.types.INFO_MT_file_export.remove(exportfunc)
 
 if __name__ == "__main__":
     register()
